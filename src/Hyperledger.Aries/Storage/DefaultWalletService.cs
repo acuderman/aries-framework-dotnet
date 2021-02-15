@@ -45,7 +45,15 @@ namespace Hyperledger.Aries.Storage
                 if (wallet == null)
                 {
                     wallet = await Wallet.OpenWalletAsync(configuration.ToJson(), credentials.ToJson());
-                    // Wallets.TryAdd(configuration.Id, wallet);
+                    Wallets.TryAdd(configuration.Id, wallet);
+
+                    if (Wallets.TryRemove(configuration.Id, out var wallet2))
+                    {
+                        if (wallet.IsOpen)
+                            await wallet.CloseAsync();
+
+                        wallet.Dispose();
+                    }
                 }
             }
             finally
