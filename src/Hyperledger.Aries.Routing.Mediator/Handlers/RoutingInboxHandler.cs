@@ -167,12 +167,13 @@ namespace Hyperledger.Aries.Routing
                 {
                     Id = inboxId,
                     StorageType = options.WalletConfiguration?.StorageType ?? "default",
-                    StorageConfiguration = options.WalletConfiguration?.StorageConfiguration
+                    StorageConfiguration = options.WalletConfiguration?.StorageConfiguration,
                 },
                 WalletCredentials = new WalletCredentials
                 {
                     Key = inboxKey,
-                    KeyDerivationMethod = options.WalletCredentials.KeyDerivationMethod,
+                    NewKey = options.WalletCredentials?.NewKey,
+                    KeyDerivationMethod = options.WalletCredentials?.KeyDerivationMethod,
                     StorageCredentials = options.WalletCredentials?.StorageCredentials
                 }
             };
