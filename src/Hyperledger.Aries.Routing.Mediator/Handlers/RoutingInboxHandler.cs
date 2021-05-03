@@ -154,6 +154,8 @@ namespace Hyperledger.Aries.Routing
 
         private async Task<CreateInboxResponseMessage> CreateInboxAsync(IAgentContext agentContext, ConnectionRecord connection, CreateInboxMessage createInboxMessage)
         {
+            var wholeFunction = Stopwatch.StartNew();
+
             if (connection.State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException("Can't create inbox if connection is not in final state");
@@ -204,11 +206,13 @@ namespace Hyperledger.Aries.Routing
             addInboxRecordWatch.Stop();
             Console.WriteLine("addInboxRecordWatch ms:" + addInboxRecordWatch.ElapsedMilliseconds);
 
-            var updateConnectionWatch = new Stopwatch();
+            var updateConnectionWatch = Stopwatch.StartNew();
             await recordService.UpdateAsync(agentContext.Wallet, connection);
             updateConnectionWatch.Stop();
             Console.WriteLine("updateConnectionWatch ms:" + updateConnectionWatch.ElapsedMilliseconds);
 
+            wholeFunction.Stop();
+            Console.WriteLine("full create inbox ms:" + wholeFunction.ElapsedMilliseconds);
 
             return new CreateInboxResponseMessage
             {
