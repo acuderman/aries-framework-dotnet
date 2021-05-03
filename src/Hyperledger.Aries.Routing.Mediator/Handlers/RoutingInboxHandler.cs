@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
@@ -158,8 +159,11 @@ namespace Hyperledger.Aries.Routing
                 throw new InvalidOperationException("Can't create inbox if connection is not in final state");
             }
 
+            var createKeysWatch = new Stopwatch();
             string inboxId = $"Edge{Guid.NewGuid().ToString("N")}";
             string inboxKey = await Wallet.GenerateWalletKeyAsync(IndySdkDefaultOptions);
+            createKeysWatch.Stop();
+            Console.WriteLine("create keys ms:" + createKeysWatch.ElapsedMilliseconds);
 
             var inboxRecord = new InboxRecord
             {
@@ -179,9 +183,14 @@ namespace Hyperledger.Aries.Routing
             };
             connection.SetTag("InboxId", inboxId);
 
+            var createWalletWatch = new Stopwatch();
+
             await walletService.CreateWalletAsync(
                 configuration: inboxRecord.WalletConfiguration,
                 credentials: inboxRecord.WalletCredentials);
+
+            createWalletWatch.Stop();
+            Console.WriteLine("create wallet ms:" + createWalletWatch.ElapsedMilliseconds);
 
             if (createInboxMessage.Metadata != null)
             {
@@ -190,9 +199,16 @@ namespace Hyperledger.Aries.Routing
                     inboxRecord.SetTag(metadata.Key, metadata.Value);
                 }
             }
-
+            var addInboxRecordWatch = new Stopwatch();
             await recordService.AddAsync(agentContext.Wallet, inboxRecord);
+            addInboxRecordWatch.Stop();
+            Console.WriteLine("addInboxRecordWatch ms:" + addInboxRecordWatch.ElapsedMilliseconds);
+
+            var updateConnectionWatch = new Stopwatch();
             await recordService.UpdateAsync(agentContext.Wallet, connection);
+            updateConnectionWatch.Stop();
+            Console.WriteLine("updateConnectionWatch ms:" + updateConnectionWatch.ElapsedMilliseconds);
+
 
             return new CreateInboxResponseMessage
             {
