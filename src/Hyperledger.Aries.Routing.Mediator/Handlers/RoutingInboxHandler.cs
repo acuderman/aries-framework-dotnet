@@ -60,6 +60,7 @@ namespace Hyperledger.Aries.Routing
                     return await CreateInboxAsync(agentContext, messageContext.Connection, messageContext.GetMessage<CreateInboxMessage>());
 
                 case RoutingTypeNames.AddRouteMessage:
+                    Console.WriteLine();
                     await AddRouteAsync(agentContext, messageContext.Connection, messageContext.GetMessage<AddRouteMessage>());
                     break;
 
@@ -164,7 +165,6 @@ namespace Hyperledger.Aries.Routing
             var createKeysWatch = Stopwatch.StartNew();
             string inboxId = $"Edge{Guid.NewGuid().ToString("N")}";
             string inboxKey = await Wallet.GenerateWalletKeyAsync(IndySdkDefaultOptions);
-            createKeysWatch.Stop();
             Console.WriteLine("create keys ms:" + createKeysWatch.ElapsedMilliseconds);
 
             var inboxRecord = new InboxRecord

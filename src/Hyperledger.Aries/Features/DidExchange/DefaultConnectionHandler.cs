@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Utils;
@@ -60,15 +62,31 @@ namespace Hyperledger.Aries.Features.DidExchange
                 case MessageTypesHttps.ConnectionRequest:
                 case MessageTypes.ConnectionRequest:
                     {
+                        // timers
+                        var fullReq = Stopwatch.StartNew();
+
                         var request = messageContext.GetMessage<ConnectionRequestMessage>();
+
+                        var processReq = Stopwatch.StartNew();
                         var connectionId = await _connectionService.ProcessRequestAsync(agentContext, request, messageContext.Connection);
                         messageContext.ContextRecord = messageContext.Connection;
 
+                        processReq.Stop();
+                        Console.WriteLine("ProcessRequestAsync ms:" + processReq.ElapsedMilliseconds);
                         // Auto accept connection if set during invitation
                         if (messageContext.Connection.GetTag(TagConstants.AutoAcceptConnection) == "true")
                         {
+
+                            var CreateResponseAsyncWatch = Stopwatch.StartNew();
+
                             var (message, record) = await _connectionService.CreateResponseAsync(agentContext, connectionId);
                             messageContext.ContextRecord = record;
+
+                            CreateResponseAsyncWatch.Stop();
+                            Console.WriteLine("CreateResponseAsyncWatch ms:" + CreateResponseAsyncWatch.ElapsedMilliseconds);
+
+                            fullReq.Stop();
+                            Console.WriteLine("full req ms: " + fullReq.ElapsedMilliseconds);
                             return message;
                         }
                         return null;

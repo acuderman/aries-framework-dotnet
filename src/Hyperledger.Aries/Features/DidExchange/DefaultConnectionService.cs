@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
@@ -182,11 +183,19 @@ namespace Hyperledger.Aries.Features.DidExchange
         {
             Logger.LogInformation(LoggingEvents.ProcessConnectionRequest, "Did {0}", request.Connection.Did);
 
+            var createDid = Stopwatch.StartNew();
             var my = await Did.CreateAndStoreMyDidAsync(agentContext.Wallet, "{}");
+            createDid.Stop();
+            Console.WriteLine("create did ms: " + createDid);
+
+            var storeTheirDid = Stopwatch.StartNew();
 
             //TODO throw exception or a problem report if the connection request features a did doc that has no indy agent did doc convention featured
             //i.e there is no way for this agent to respond to messages. And or no keys specified
             await Did.StoreTheirDidAsync(agentContext.Wallet, new { did = request.Connection.Did, verkey = request.Connection.DidDoc.Keys[0].PublicKeyBase58 }.ToJson());
+
+            storeTheirDid.Stop();
+            Console.WriteLine("store their did ms: " + storeTheirDid.ElapsedMilliseconds);
 
             if (request.Connection.DidDoc.Services != null &&
                 request.Connection.DidDoc.Services.Count > 0 &&
@@ -213,6 +222,7 @@ namespace Hyperledger.Aries.Features.DidExchange
 
             if (!connection.MultiPartyInvitation)
             {
+                Console.WriteLine("NOT multi party conn");
                 await connection.TriggerAsync(ConnectionTrigger.InvitationAccept);
                 await RecordService.UpdateAsync(agentContext.Wallet, connection);
 
@@ -230,8 +240,19 @@ namespace Hyperledger.Aries.Features.DidExchange
             newConnection.Id = Guid.NewGuid().ToString();
             newConnection.MultiPartyInvitation = false;
 
+            var triggerWatch = Stopwatch.StartNew();
+
             await newConnection.TriggerAsync(ConnectionTrigger.InvitationAccept);
+            triggerWatch.Stop();
+            Console.WriteLine("triggerWatch ms: " + triggerWatch.ElapsedMilliseconds);
+
+            var recordServiceAdd = Stopwatch.StartNew();
+
             await RecordService.AddAsync(agentContext.Wallet, newConnection);
+            recordServiceAdd.Stop();
+            Console.WriteLine("recordServiceAdd ms: " + recordServiceAdd.ElapsedMilliseconds);
+
+            var EventAggregatorWatch = Stopwatch.StartNew();
 
             EventAggregator.Publish(new ServiceMessageProcessingEvent
             {
@@ -239,6 +260,10 @@ namespace Hyperledger.Aries.Features.DidExchange
                 MessageType = request.Type,
                 ThreadId = request.GetThreadId()
             });
+
+            EventAggregatorWatch.Stop();
+            Console.WriteLine("event publish ms: " + EventAggregatorWatch.ElapsedMilliseconds);
+
             return newConnection.Id;
         }
 
@@ -280,17 +305,32 @@ namespace Hyperledger.Aries.Features.DidExchange
         {
             Logger.LogTrace(LoggingEvents.AcceptConnectionRequest, "ConnectionId {0}", connectionId);
 
+            var getConnection = Stopwatch.StartNew();
+
             var connection = await GetAsync(agentContext, connectionId);
+            getConnection.Stop();
+            Console.WriteLine("get conn ms: " + getConnection.ElapsedMilliseconds);
 
             if (connection.State != ConnectionState.Negotiating)
                 throw new AriesFrameworkException(ErrorCode.RecordInInvalidState,
                     $"Connection state was invalid. Expected '{ConnectionState.Negotiating}', found '{connection.State}'");
 
-            await connection.TriggerAsync(ConnectionTrigger.Request);
-            await RecordService.UpdateAsync(agentContext.Wallet, connection);
+            var triggerAsyn = Stopwatch.StartNew();
 
+            await connection.TriggerAsync(ConnectionTrigger.Request);
+            triggerAsyn.Stop();
+            Console.WriteLine("trigger asyn 2 ms: " + triggerAsyn.ElapsedMilliseconds);
+
+            var updateAsyn = Stopwatch.StartNew();
+            await RecordService.UpdateAsync(agentContext.Wallet, connection);
+            updateAsyn.Stop();
+            Console.WriteLine("update resp ms: " + updateAsyn.ElapsedMilliseconds);
+
+            var getProvis = Stopwatch.StartNew();
             // Send back response message
             var provisioning = await ProvisioningService.GetProvisioningAsync(agentContext.Wallet);
+            getProvis.Stop();
+            Console.WriteLine("get provisioning ms: " + getProvis.ElapsedMilliseconds);
 
             var connectionData = new Connection
             {
@@ -298,7 +338,12 @@ namespace Hyperledger.Aries.Features.DidExchange
                 DidDoc = connection.MyDidDoc(provisioning)
             };
 
+            var SignData = Stopwatch.StartNew();
+
             var sigData = await SignatureUtils.SignDataAsync(agentContext, connectionData, connection.GetTag(TagConstants.ConnectionKey));
+            SignData.Stop();
+            Console.WriteLine("signdata ms: " + SignData.ElapsedMilliseconds);
+
             var threadId = connection.GetTag(TagConstants.LastThreadId);
 
             var response = new ConnectionResponseMessage(agentContext.UseMessageTypesHttps) { ConnectionSig = sigData };
