@@ -97,7 +97,12 @@ namespace Hyperledger.Aries.Features.DidExchange
 
             if (firstQuery == null)
             {
-                secondQuery = (await connectionService.ListAsync(agentContext, SearchQuery.Equal(TagConstants.ConnectionKey, myKey), 5)).SingleOrDefault();
+                secondQuery = (await connectionService.ListAsync(agentContext,
+                        SearchQuery.And(
+                            SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True"),
+                            SearchQuery.Equal(TagConstants.ConnectionKey, myKey)
+                            ), 5))
+                    .SingleOrDefault();
 
                 Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds);
                 stopwatc.Restart();
