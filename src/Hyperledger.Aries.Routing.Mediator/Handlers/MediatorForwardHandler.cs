@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
 using Hyperledger.Aries.Contracts;
@@ -41,6 +42,8 @@ namespace Hyperledger.Aries.Routing
         /// <inheritdoc />
         protected override async Task<AgentMessage> ProcessAsync(ForwardMessage message, IAgentContext agentContext, UnpackedMessageContext messageContext)
         {
+            var mediatorForwardHandler = Stopwatch.StartNew();
+
             var inboxId = await routingStore.FindRouteAsync(message.To);
             var inboxRecord = await recordService.GetAsync<InboxRecord>(agentContext.Wallet, inboxId);
 
@@ -54,6 +57,8 @@ namespace Hyperledger.Aries.Routing
                 InboxId = inboxId,
                 ItemId = inboxItemRecord.Id
             });
+            mediatorForwardHandler.Stop();
+            Console.WriteLine("mediator forward handler: " + mediatorForwardHandler.ElapsedMilliseconds);
 
             return null;
         }

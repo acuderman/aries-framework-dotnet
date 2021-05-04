@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Extensions;
@@ -100,6 +101,8 @@ namespace Hyperledger.Aries.Agents
         /// TODO should receive a message context and return a message context.
         public async Task<MessageContext> ProcessAsync(IAgentContext context, MessageContext messageContext)
         {
+            var fullProcessAsync = Stopwatch.StartNew();
+
             EnsureConfigured();
 
             if (context is DefaultAgentContext agentContext)
@@ -110,8 +113,12 @@ namespace Hyperledger.Aries.Agents
                 MessageContext outgoingMessageContext = null;
                 while (agentContext.TryGetNext(out var message) && outgoingMessageContext == null)
                 {
+                    Console.WriteLine(message.ToJson());
                     outgoingMessageContext = await ProcessMessage(agentContext, message);
                 }
+
+                fullProcessAsync.Stop();
+                Console.WriteLine("full top level process async" + fullProcessAsync.ElapsedMilliseconds);
                 return outgoingMessageContext;
             }
             throw new Exception("Unsupported agent context. When using custom context, please inherit from 'DefaultAgentContext'");

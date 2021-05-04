@@ -324,7 +324,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             var updateAsyn = Stopwatch.StartNew();
             await RecordService.UpdateAsync(agentContext.Wallet, connection);
             updateAsyn.Stop();
-            Console.WriteLine("update resp ms: " + updateAsyn.ElapsedMilliseconds);
+            Console.WriteLine("update resp ms: " + updateAsyn.ElapsedMilliseconds + connection.ToJson());
 
             var getProvis = Stopwatch.StartNew();
             // Send back response message
