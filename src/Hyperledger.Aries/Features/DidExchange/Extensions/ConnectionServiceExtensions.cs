@@ -103,7 +103,7 @@ namespace Hyperledger.Aries.Features.DidExchange
                             SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True"), 5))
                     .SingleOrDefault();
 
-                Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds + "resp: " secondQuery.ToJson());
+                Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds + "resp: " +  secondQuery.ToJson());
                 stopwatc.Restart();
             }
 
