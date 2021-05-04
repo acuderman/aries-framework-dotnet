@@ -188,6 +188,7 @@ namespace Hyperledger.Aries.Agents
         private async Task<(UnpackedMessageContext, UnpackResult)> UnpackAsync(IAgentContext agentContext, PackedMessageContext message)
         {
             UnpackResult unpacked;
+            var stopwatchUnpack = Stopwatch.StartNew();
 
             try
             {
@@ -198,13 +199,23 @@ namespace Hyperledger.Aries.Agents
                 Logger.LogError("Failed to un-pack message", e);
                 throw new AriesFrameworkException(ErrorCode.InvalidMessage, "Failed to un-pack message", e);
             }
+            stopwatchUnpack.Stop();
+            Console.WriteLine("crypto unpack ms: " + stopwatchUnpack.ElapsedMilliseconds);
 
             UnpackedMessageContext result = null;
             if (unpacked.SenderVerkey != null && message.Connection == null)
             {
+                Console.WriteLine("unpacked.SenderVerkey != null && message.Connection == null");
+
                 try
                 {
-                    if (await ConnectionService.ResolveByMyKeyAsync(agentContext, unpacked.RecipientVerkey) is ConnectionRecord connection)
+                    var resolvebyMyKey = Stopwatch.StartNew();
+
+                    var sad = await ConnectionService.ResolveByMyKeyAsync(agentContext, unpacked.RecipientVerkey);
+                    resolvebyMyKey.Stop();
+                    Console.WriteLine("ResolveByMyKeyAsync ms: " + resolvebyMyKey);
+
+                    if (sad is ConnectionRecord connection)
                     {
                         result = new UnpackedMessageContext(unpacked.Message, connection);
                     }
