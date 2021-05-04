@@ -118,7 +118,7 @@ namespace Hyperledger.Aries.Agents
                 }
 
                 fullProcessAsync.Stop();
-                Console.WriteLine("full top level process async" + fullProcessAsync.ElapsedMilliseconds);
+                Console.WriteLine("full top level process async ms: " + fullProcessAsync.ElapsedMilliseconds);
                 return outgoingMessageContext;
             }
             throw new Exception("Unsupported agent context. When using custom context, please inherit from 'DefaultAgentContext'");
@@ -126,6 +126,8 @@ namespace Hyperledger.Aries.Agents
 
         private async Task<MessageContext> ProcessMessage(IAgentContext agentContext, MessageContext messageContext)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             UnpackResult unpacked = null;
             UnpackedMessageContext inboundMessageContext = null;
             if (messageContext is PackedMessageContext packedMessageContext)
@@ -133,6 +135,9 @@ namespace Hyperledger.Aries.Agents
                 (inboundMessageContext, unpacked) = await UnpackAsync(agentContext, packedMessageContext);
                 Logger.LogInformation($"Agent Message Received : {inboundMessageContext.ToJson()}");
             }
+
+            Console.WriteLine("unpack top level ms: " + stopwatch.ElapsedMilliseconds);
+            stopwatch.Restart();
 
             if (Handlers.Where(handler => handler != null).FirstOrDefault(
                     handler => handler.SupportedMessageTypes.Any(
@@ -148,6 +153,9 @@ namespace Hyperledger.Aries.Agents
                 try
                 {
                     response = await messageHandler.ProcessAsync(agentContext, inboundMessageContext);
+
+                    Console.WriteLine("Process async ms: " + stopwatch.ElapsedMilliseconds);
+                    stopwatch.Restart();
                 }
                 catch (AriesFrameworkException e)
                 {
@@ -159,6 +167,8 @@ namespace Hyperledger.Aries.Agents
                 {
                     await middleware.OnMessageAsync(agentContext, inboundMessageContext);
                 }
+                Console.WriteLine("Middlewares ms: " + stopwatch.ElapsedMilliseconds);
+                stopwatch.Restart();
 
                 if (response != null)
                 {
@@ -167,6 +177,9 @@ namespace Hyperledger.Aries.Agents
                         var result = inboundMessageContext.Connection != null
                             ? await CryptoUtils.PackAsync(agentContext.Wallet, inboundMessageContext.Connection.TheirVk, response.ToByteArray())
                             : await CryptoUtils.PackAsync(agentContext.Wallet, unpacked.SenderVerkey, response.ToByteArray());
+
+                        Console.WriteLine("Pack async ms: " + stopwatch.ElapsedMilliseconds);
+                        stopwatch.Stop();
                         return new PackedMessageContext(result);
                     }
                     if (inboundMessageContext.Connection != null)
