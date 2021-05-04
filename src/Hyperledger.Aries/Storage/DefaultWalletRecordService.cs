@@ -57,9 +57,11 @@ namespace Hyperledger.Aries.Storage
                 if(skip > 0) {
                     await search.NextAsync(wallet, skip);
                 }
+
+                var stopwatch = Stopwatch.StartNew();
                 var result = JsonConvert.DeserializeObject<SearchResult>(await search.NextAsync(wallet, count), _jsonSettings);
 
-                return result.Records?
+                var records = result.Records?
                            .Select(x =>
                            {
                                var record = JsonConvert.DeserializeObject<T>(x.Value, _jsonSettings);
@@ -69,6 +71,11 @@ namespace Hyperledger.Aries.Storage
                            })
                            .ToList()
                        ?? new List<T>();
+
+                Console.WriteLine("List mapping ms: " + stopwatch.ElapsedMilliseconds);
+                stopwatch.Stop();
+
+                return records;
             }
         }
 

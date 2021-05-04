@@ -92,20 +92,32 @@ namespace Hyperledger.Aries.Features.DidExchange
             Console.WriteLine("First connections query ms: " + stopwatc.ElapsedMilliseconds);
 
             stopwatc.Restart();
-            var secondQuery = (await connectionService.ListAsync(agentContext,
-                    SearchQuery.And(
-                        SearchQuery.Equal(TagConstants.ConnectionKey, myKey),
-                        SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True")), 5))
-                .SingleOrDefault();
-            Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds);
-            stopwatc.Restart();
 
-            var thirdQuery = (await connectionService.ListAsync(agentContext,
-                    SearchQuery.Equal(TagConstants.ConnectionKey, myKey), 5))
-                .SingleOrDefault();
+            ConnectionRecord secondQuery = null;
 
-            Console.WriteLine("Third connections query ms: " + stopwatc.ElapsedMilliseconds);
-            stopwatc.Stop();
+            if (firstQuery == null)
+            {
+                secondQuery = (await connectionService.ListAsync(agentContext,
+                        SearchQuery.And(
+                            SearchQuery.Equal(TagConstants.ConnectionKey, myKey),
+                            SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True")), 5))
+                    .SingleOrDefault();
+
+                Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds);
+                stopwatc.Restart();
+            }
+
+            ConnectionRecord thirdQuery = null;
+
+            if (firstQuery == null && secondQuery == null)
+            {
+                thirdQuery = (await connectionService.ListAsync(agentContext,
+                        SearchQuery.Equal(TagConstants.ConnectionKey, myKey), 5))
+                    .SingleOrDefault();
+
+                Console.WriteLine("Third connections query ms: " + stopwatc.ElapsedMilliseconds);
+                stopwatc.Stop();
+            }
 
             var record =
                 // Check if key is part of a connection
