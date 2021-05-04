@@ -100,7 +100,7 @@ namespace Hyperledger.Aries.Features.DidExchange
             {
                 secondQuery = (await connectionService.ListAsync(agentContext,
 
-                            SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True")), 5)
+                            SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True"), 5))
                     .SingleOrDefault();
 
                 Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds + "resp: " secondQuery.ToJson());
