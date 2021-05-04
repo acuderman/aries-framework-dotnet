@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Hyperledger.Aries.Agents;
-using Hyperledger.Aries.Extensions;
 using Hyperledger.Aries.Features.IssueCredential;
 using Hyperledger.Aries.Storage;
 using Hyperledger.Aries.Utils;
@@ -98,12 +97,9 @@ namespace Hyperledger.Aries.Features.DidExchange
 
             if (firstQuery == null)
             {
-                secondQuery = (await connectionService.ListAsync(agentContext,
+                secondQuery = (await connectionService.ListAsync(agentContext, SearchQuery.Equal(TagConstants.ConnectionKey, myKey), 5)).SingleOrDefault();
 
-                            SearchQuery.Equal(nameof(ConnectionRecord.MultiPartyInvitation), "True"), 5))
-                    .SingleOrDefault();
-
-                Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds + "resp: " +  secondQuery.ToJson());
+                Console.WriteLine("Second connections query ms: " + stopwatc.ElapsedMilliseconds);
                 stopwatc.Restart();
             }
 
